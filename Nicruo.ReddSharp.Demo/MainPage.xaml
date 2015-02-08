@@ -9,7 +9,7 @@
     DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ListView ItemsSource="{Binding Subreddits}" SelectionMode="None">
+        <ListView ItemsSource="{Binding Subreddits}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="ListView_ItemClick" >
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding}" />

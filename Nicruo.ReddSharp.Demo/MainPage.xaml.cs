@@ -62,5 +62,10 @@ namespace Nicruo.ReddSharp.Demo
             if (eventHandler != null)
                 eventHandler(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        private void ListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            Frame.Navigate(typeof(SubredditPage), e.ClickedItem);
+        }
     }
 }

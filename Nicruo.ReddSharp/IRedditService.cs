@@ -8,6 +8,7 @@ namespace Nicruo.ReddSharp
     {
         Task<IList<string>> GetSubredditsAsync();
         Task<Subreddit> GetSubredditAsync(string subredditName);
+        Task<SubredditAbout> GetSubredditAboutAsync(string subredditName);
         Task<IList<string>> SearchForSubredditsAsync(string query);
     }
 }

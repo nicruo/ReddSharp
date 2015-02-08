@@ -70,6 +70,29 @@ namespace Nicruo.ReddSharp.WindowsStore
             return subreddit;
         }
 
+        public async Task<SubredditAbout> GetSubredditAboutAsync(string subredditName)
+        {
+            var subredditAbout = new SubredditAbout();
+
+            var response = await httpClient.GetStringAsync("http://www.reddit.com/r/" + subredditName + "/about.json");
+
+            var jObject = JObject.Parse(response);
+
+            var obj = jObject["data"];
+
+            subredditAbout.SubmitText = obj["submit_text"].ToString();
+            subredditAbout.DisplayName = obj["display_name"].ToString();
+            subredditAbout.HeaderImg = obj["header_img"].ToString();
+            subredditAbout.DescriptionHtml = obj["description_html"].ToString();
+            subredditAbout.Title = obj["title"].ToString();
+            subredditAbout.Over18 = obj["over18"].Value<bool>();
+            subredditAbout.Description = obj["description"].ToString();
+            subredditAbout.Subscribers = obj["subscribers"].Value<long>();
+            subredditAbout.PublicDescription = obj["public_description"].ToString();
+
+            return subredditAbout;
+        }
+
         public async Task<IList<string>> SearchForSubredditsAsync(string query)
         {
             var subreddits = new List<string>();
