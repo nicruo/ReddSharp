@@ -1,0 +1,35 @@
+﻿<Page
+    x:Name="pageRoot"
+    x:Class="Nicruo.ReddSharp.Demo.Universal.View.CommentsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:common="using:Nicruo.ReddSharp.Demo.Universal.Common"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    DataContext="{Binding RelativeSource={RelativeSource Self}}">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition/>
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="140"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <common:HeaderControl Command="{Binding NavigationHelper.GoBackCommand, ElementName=pageRoot}" Title="{Binding Post.Title}" />
+
+        <ScrollViewer HorizontalScrollMode="Disabled" Padding="40,0,40,0" Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding Comments}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <common:CommentControl Comment="{Binding}"></common:CommentControl>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Page>
