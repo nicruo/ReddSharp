@@ -1,4 +1,5 @@
 ﻿using Nicruo.ReddSharp.Demo.Common;
+using Nicruo.ReddSharp.Domain;
 using Nicruo.ReddSharp.WindowsStore;
 using System;
 using System.Collections.Generic;
@@ -9,44 +10,26 @@ using Windows.UI.Xaml.Navigation;
 
 namespace Nicruo.ReddSharp.Demo
 {
-    public sealed partial class MainPage : Page, INotifyPropertyChanged
+    public sealed partial class PostPage : Page, INotifyPropertyChanged
     {
-        private NavigationHelper _navigationHelper;
+
+        private NavigationHelper _navigationHelper;        
         public NavigationHelper NavigationHelper
         {
             get { return this._navigationHelper; }
         }
 
-        private IList<string> _subreddits;
-        public IList<string> Subreddits
+        private Post _post;
+        public Post Post
         {
-            get { return _subreddits; }
-            set { SetProperty(ref _subreddits, value); }
+            get { return _post; }
+            set { SetProperty(ref _post, value); }
         }
 
-        public string Title { get; set; }
-
-
-        public MainPage()
+        public PostPage()
         {
             this.InitializeComponent();
             this._navigationHelper = new NavigationHelper(this);
-        }
-
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
-        {
-            _navigationHelper.OnNavigatedTo(e);
-            RedditService redditService = new RedditService();
-
-            var subreddits = await redditService.GetSubredditsAsync();
-            Subreddits = new List<string>(subreddits);
-
-            await redditService.GetPostCommentsAsync("2vvaj6");
-        }
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            _navigationHelper.OnNavigatedFrom(e);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -67,9 +50,24 @@ namespace Nicruo.ReddSharp.Demo
                 eventHandler(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            _navigationHelper.OnNavigatedTo(e);
+            string id = (string)e.Parameter;
+
+            RedditService redditService = new RedditService();
+            PostComments postComments = await redditService.GetPostCommentsAsync(id);
+            Post = postComments.Post;
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            _navigationHelper.OnNavigatedFrom(e);
+        }
+
         private void ListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            Frame.Navigate(typeof(SubredditPage), e.ClickedItem);
+
         }
     }
 }

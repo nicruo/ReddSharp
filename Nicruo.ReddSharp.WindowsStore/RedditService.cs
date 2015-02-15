@@ -1,12 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using Nicruo.ReddSharp.Domain;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nicruo.ReddSharp;
-using Nicruo.ReddSharp.Domain;
 using System.Net.Http;
-using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 
 namespace Nicruo.ReddSharp.WindowsStore
 {
@@ -57,6 +54,7 @@ namespace Nicruo.ReddSharp.WindowsStore
             {
                 var post = new Post();
 
+                post.Id = obj["data"]["id"].ToString();
                 post.Title = obj["data"]["title"].ToString();
                 post.Author = obj["data"]["author"].ToString();
                 post.Score = obj["data"]["score"].Value<int>();
@@ -109,6 +107,56 @@ namespace Nicruo.ReddSharp.WindowsStore
             }
 
             return subreddits;
+        }
+
+        public async Task<PostComments> GetPostCommentsAsync(string id)
+        {
+            var postComments = new PostComments();
+
+            var response = await httpClient.GetStringAsync("http://www.reddit.com/r/comments/" + id + "/.json");
+
+            var jArray = JArray.Parse(response);
+
+            var post = new Post();
+
+            post.Id = jArray[0]["data"]["children"][0]["data"]["id"].ToString();
+            post.Title = jArray[0]["data"]["children"][0]["data"]["title"].ToString();
+            post.Author = jArray[0]["data"]["children"][0]["data"]["author"].ToString();
+            post.Score = jArray[0]["data"]["children"][0]["data"]["score"].Value<int>();
+            post.Thumbnail = jArray[0]["data"]["children"][0]["data"]["thumbnail"].ToString();
+            post.Url = jArray[0]["data"]["children"][0]["data"]["url"].ToString();
+            post.NumberOfComments = jArray[0]["data"]["children"][0]["data"]["num_comments"].Value<int>();
+
+            postComments.Post = post;
+
+            if (jArray.Count > 1)
+            {
+                var comments = ParseComments(jArray[1] as JObject);
+                postComments.Comments = comments;
+            }
+            return postComments;
+        }
+
+        private List<Comment> ParseComments (JObject obj)
+        {
+            if (obj == null)
+                return null;
+            
+            var comments = new List<Comment>();
+            foreach(var ob in obj["data"]["children"])
+            {
+                if (ob["kind"].ToString() != "t1")
+                    continue;
+                var comment = new Comment();
+                comment.Id = ob["data"]["id"].ToString();
+                comment.Body = ob["data"]["body"].ToString();
+                comment.Author = ob["data"]["author"].ToString();
+                comment.Score = ob["data"]["score"].Value<int>();
+                comment.Replies = ParseComments(ob["data"]["replies"] as JObject);
+                comments.Add(comment);
+            }
+
+            return comments;
         }
     }
 }

@@ -10,5 +10,6 @@ namespace Nicruo.ReddSharp
         Task<Subreddit> GetSubredditAsync(string subredditName);
         Task<SubredditAbout> GetSubredditAboutAsync(string subredditName);
         Task<IList<string>> SearchForSubredditsAsync(string query);
+        Task<PostComments> GetPostCommentsAsync(string id);
     }
 }
