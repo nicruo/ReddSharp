@@ -63,8 +63,7 @@ namespace Nicruo.ReddSharp.Demo.Universal.View
             _navigationHelper.OnNavigatedTo(e);
             string id = (string)e.Parameter;
 
-            RedditService redditService = new RedditService();
-            PostComments postComments = await redditService.GetPostCommentsAsync(id);
+            PostComments postComments = await RedditService.Instance.GetPostCommentsAsync(id);
             Post = postComments.Post;
             Comments = postComments.Comments;
 

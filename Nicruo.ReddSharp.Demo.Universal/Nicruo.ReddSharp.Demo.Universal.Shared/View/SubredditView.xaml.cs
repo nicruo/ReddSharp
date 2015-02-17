@@ -71,10 +71,9 @@ namespace Nicruo.ReddSharp.Demo.Universal.View
             string subredditName = (string)e.Parameter;
             Title = subredditName;
 
-            RedditService redditService = new RedditService();
-            Subreddit subreddit = await redditService.GetSubredditAsync(subredditName);
+            Subreddit subreddit = await RedditService.Instance.GetSubredditAsync(subredditName);
             Posts = subreddit.Posts;
-            About = await redditService.GetSubredditAboutAsync(subredditName);
+            About = await RedditService.Instance.GetSubredditAboutAsync(subredditName);
 
         }
 

@@ -1,26 +1,57 @@
 ﻿using Newtonsoft.Json.Linq;
 using Nicruo.ReddSharp.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Windows.Foundation;
+using Windows.Security.Authentication.Web;
+using Windows.Security.Cryptography;
+using Windows.Security.Cryptography.Core;
+using Windows.Storage.Streams;
 
 namespace Nicruo.ReddSharp.Demo.Universal.Common
 {
     public class RedditService: IRedditService
     {
+        #region Singleton Pattern Implementation
+        private static volatile RedditService instance;
+        private static object syncRoot = new Object();
+
+        public static RedditService Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    lock (syncRoot)
+                    {
+                        instance = new RedditService();
+                    }
+                }
+                return instance;
+            }
+        }
+        #endregion
+
         HttpClient httpClient;
+        string accessToken;
+
+        public string RedditApiUrl { get { return accessToken != null ? "https://oauth.reddit.com/" : "http://www.reddit.com/"; } }
 
         public RedditService()
         {
             httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("User-Agent","PSBattle");
         }
 
         public async Task<IList<string>> GetSubredditsAsync()
         {
             var subreddits = new List<string>();
 
-            var response = await httpClient.GetStringAsync("http://www.reddit.com/.json");
+            var response = await httpClient.GetStringAsync(RedditApiUrl + ".json");
 
             var jObject = JObject.Parse(response);
 
@@ -44,7 +75,7 @@ namespace Nicruo.ReddSharp.Demo.Universal.Common
 
             subreddit.Posts = new List<Post>();
 
-            var response = await httpClient.GetStringAsync("http://www.reddit.com/r/" + subredditName + "/.json");
+            var response = await httpClient.GetStringAsync(RedditApiUrl + "r/" + subredditName + "/.json");
 
             var jObject = JObject.Parse(response);
 
@@ -72,7 +103,7 @@ namespace Nicruo.ReddSharp.Demo.Universal.Common
         {
             var subredditAbout = new SubredditAbout();
 
-            var response = await httpClient.GetStringAsync("http://www.reddit.com/r/" + subredditName + "/about.json");
+            var response = await httpClient.GetStringAsync(RedditApiUrl + "r/" + subredditName + "/about.json");
 
             var jObject = JObject.Parse(response);
 
@@ -95,7 +126,7 @@ namespace Nicruo.ReddSharp.Demo.Universal.Common
         {
             var subreddits = new List<string>();
 
-            var response = await httpClient.GetStringAsync("http://www.reddit.com/subreddits/search.json?q=" + query);
+            var response = await httpClient.GetStringAsync(RedditApiUrl + "subreddits/search.json?q=" + query);
 
             var jObject = JObject.Parse(response);
 
@@ -113,7 +144,7 @@ namespace Nicruo.ReddSharp.Demo.Universal.Common
         {
             var postComments = new PostComments();
 
-            var response = await httpClient.GetStringAsync("http://www.reddit.com/r/comments/" + id + "/.json");
+            var response = await httpClient.GetStringAsync(RedditApiUrl + "comments/" + id + "/.json");
 
             var jArray = JArray.Parse(response);
 
@@ -157,6 +188,67 @@ namespace Nicruo.ReddSharp.Demo.Universal.Common
             }
 
             return comments;
+        }
+
+        public async Task AuthenticateAsync()
+        {
+            var clientId = "MTcpOsELm-U8sw";
+            var authenticationResult = await WebAuthenticationBroker.AuthenticateAsync(WebAuthenticationOptions.None, new Uri("https://www.reddit.com/api/v1/authorize?client_id=" + clientId + "&response_type=code&state=RANDOM_STRING2&redirect_uri=http://localhost&duration=permanent&scope=identity,edit,flair,history,modconfig,modflair,modlog,modposts,modwiki,mysubreddits,privatemessages,read,report,save,submit,subscribe,vote,wikiedit,wikiread"), new Uri("http://localhost"));
+            if(authenticationResult.ResponseStatus == WebAuthenticationStatus.Success)
+            {
+                WwwFormUrlDecoder urlDecoder = new WwwFormUrlDecoder(new Uri(authenticationResult.ResponseData).Query);
+
+                var codeString = urlDecoder.GetFirstValueByName("code");
+
+                var postClient = new HttpClient();
+                postClient.DefaultRequestHeaders.Authorization = CreateBasicHeader(clientId, "");
+
+                HttpContent httpContent = new StringContent("grant_type=authorization_code&code=" + codeString + "&redirect_uri=http://localhost");
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+                var responseMessage = await postClient.PostAsync(new Uri("https://ssl.reddit.com/api/v1/access_token"), httpContent);
+
+                var responseContent = await responseMessage.Content.ReadAsStringAsync();
+
+                var jsonResponse = JObject.Parse(responseContent);
+
+                accessToken = jsonResponse["access_token"].ToString();
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
+            }
+        }
+
+        private AuthenticationHeaderValue CreateBasicHeader(string username, string password)
+        {
+            password = SampleHashMsg("MD5", password);
+            byte[] byteArray = System.Text.Encoding.UTF8.GetBytes(username + ":" + password);
+            return new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+        }
+
+        private String SampleHashMsg(String strAlgName, String strMsg)
+        {
+            // Convert the message string to binary data.
+            IBuffer buffUtf8Msg = CryptographicBuffer.ConvertStringToBinary(strMsg, BinaryStringEncoding.Utf8);
+
+            // Create a HashAlgorithmProvider object.
+            HashAlgorithmProvider objAlgProv = HashAlgorithmProvider.OpenAlgorithm(strAlgName);
+
+            // Demonstrate how to retrieve the name of the hashing algorithm.
+            String strAlgNameUsed = objAlgProv.AlgorithmName;
+
+            // Hash the message.
+            IBuffer buffHash = objAlgProv.HashData(buffUtf8Msg);
+
+            // Verify that the hash length equals the length specified for the algorithm.
+            if (buffHash.Length != objAlgProv.HashLength)
+            {
+                throw new Exception("There was an error creating the hash");
+            }
+
+            // Convert the hash to a string (for display).
+            String strHashBase64 = CryptographicBuffer.EncodeToHexString(buffHash);
+
+            // Return the encoded string
+            return strHashBase64;
         }
     }
 }

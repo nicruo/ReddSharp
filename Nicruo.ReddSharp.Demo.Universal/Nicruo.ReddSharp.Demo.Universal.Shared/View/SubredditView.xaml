@@ -26,6 +26,7 @@
 
         <common:HeaderControl Command="{Binding NavigationHelper.GoBackCommand, ElementName=pageRoot}" Title="{Binding Title}" />
 
+        
         <ListView Grid.Row="1" ItemsSource="{Binding Posts}" Padding="40,0,0,0" SelectionMode="None" IsItemClickEnabled="True" ItemClick="ListView_ItemClick" >
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
